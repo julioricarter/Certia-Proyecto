@@ -1,0 +1,13 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfplan
+terraform.tfvars
+*.auto.tfvars
+backend.hcl
+**/lambda.zip
+
+
+!.terraform.lock.hcl

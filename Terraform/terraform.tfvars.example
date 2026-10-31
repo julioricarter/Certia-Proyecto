@@ -1,0 +1,3 @@
+ws_region   = "us-east-2"
+project_name = "certia"
+environment  = "dev"

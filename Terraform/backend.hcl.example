@@ -1,13 +1,6 @@
-# Terraform
-.terraform/
-*.tfstate
-*.tfstate.*
-crash.log
-*.tfplan
-terraform.tfvars
-*.auto.tfvars
-backend.hcl
-**/lambda.zip
+bucket       = "REEMPLAZAR-nombre-bucket-estado"
+key          = "lab09/dev/terraform.tfstate"
+region       = "us-east-2"
+encrypt      = true
+use_lockfile = true
 
-
-!.terraform.lock.hcl
