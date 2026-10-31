@@ -1,21 +1,68 @@
-name: Github Actions demo
+name: Terraform dev
 
-run-name: ${{github.actor}} esta ejecutando un pipeline
-on: [push]
+on:
+  push:
+    branches: [development]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/**"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Acción a ejecutar (ejecutar desde la rama development)"
+        type: choice
+        options: [apply, destroy]
+        default: apply
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: terraform-dev
+  cancel-in-progress: false
+
+env:
+  TF_DIR: terraform
+  TF_IN_AUTOMATION: "true"
+  TF_VAR_aws_region: ${{ vars.AWS_REGION }}
 
 jobs:
-    Saludar-Hello-World:
-        runs-on: ubuntu-latest
-        steps:
-            - run: echo "Este job ha sido ejecutado ${{github.event_name}}"
-            - run: echo "El nombre de la rama es ${{github.ref}}. Y el repositorio es ${{github.repository}}"
-            - name: Checkout repository
-              uses: actions/checkout@v6
-            - name: Listar los archivos del repositorio
-              run: |
-                ls ${{github.workspace}}
-            - name: Usar un secreto de forma segura
-              env:
-                SECRET_NAME2: ${{secrets.SECRET_NAME}}
-              run: |
-                echo "Mi secreto es $SECRET_NAME2. ${{secrets.SECRET_NAME}}. ${{vars.NAME}}"
+  terraform:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+
+      - name: Init
+        run: |
+          terraform -chdir=$TF_DIR init -input=false \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="key=lab09/dev/terraform.tfstate" \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+
+      - name: Validate
+        run: terraform -chdir=$TF_DIR validate
+
+      - name: Plan
+        if: github.event_name == 'push' || inputs.action == 'apply'
+        run: terraform -chdir=$TF_DIR plan -input=false -out=tfplan
+
+      - name: Apply
+        if: github.event_name == 'push' || inputs.action == 'apply'
+        run: terraform -chdir=$TF_DIR apply -input=false -auto-approve tfplan
+
+      - name: Destroy
+        if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
+        run: terraform -chdir=$TF_DIR destroy -input=false -auto-approve
