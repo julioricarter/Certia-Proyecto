@@ -50,3 +50,17 @@ resource "aws_iam_role_policy" "lambda_logs" {
     }]
   })
 }
+
+resource "aws_lambda_function" "api" {
+  function_name    = "${var.name_prefix}-api"
+  role             = aws_iam_role.lambda_exec.arn
+  runtime          = "python3.12"
+  handler          = "index.handler"
+  filename         = data.archive_file.lambda.output_path
+  source_code_hash = data.archive_file.lambda.output_base64sha256
+
+  depends_on = [
+    aws_cloudwatch_log_group.lambda,
+    aws_iam_role_policy.lambda_logs,
+  ]
+}
