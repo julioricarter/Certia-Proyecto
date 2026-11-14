@@ -20,7 +20,8 @@ data "archive_file" "lambda" {
 
 resource "aws_cloudwatch_log_group" "lambda" {
   name              = "/aws/lambda/${var.name_prefix}-api"
-  retention_in_days = var.log_retention_days
+  retention_in_days = 365                  # Soluciona CKV_AWS_338 (retención de 1 año)
+  kms_key_id        = var.cloudwatch_kms_key_arn # Soluciona CKV_AWS_158 (cifrado KMS)
 }
 
 resource "aws_iam_role" "lambda_exec" {
