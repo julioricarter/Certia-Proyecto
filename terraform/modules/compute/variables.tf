@@ -8,3 +8,9 @@ variable "log_retention_days" {
   type        = number
   default     = 7
 }
+
+variable "cloudwatch_kms_key_arn" {
+  type        = string
+  description = "ARN de la llave KMS para cifrar los logs de CloudWatch"
+  default     = null # O puedes dejarlo sin default si es obligatorio
+}
